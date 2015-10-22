@@ -32,7 +32,6 @@ $(function () {
         onLoadError: function (jqXHR, textStatus, errorThrown) { ShowMsg(0, jqXHR.responseText); },
         onLoadSuccess: function (json) { ShowMsgJson(json); }
     });
-
     IntiComboCity($('#ddlFromCity'), true);
     IntiComboCity($('#ddlToCity'), true);
     $("#lnkSearch").click(CallSearch);
@@ -40,8 +39,8 @@ $(function () {
     function CallSearch() {
         var fromCity = $('#ddlFromCity').combobox('getValue');
         var toCity = $('#ddlToCity').combobox('getValue');
-        var deptDate = $('#txtC_Departure').text();
-        grid.datagrid('load', { fromCity: fromCity, toCity: toCity, deptDate: deptDate });
+        var departDate = $('#txtC_Departure').datebox("getValue");
+        grid.datagrid('load', { fromCity: fromCity, toCity: toCity, Departure: departDate });
     }
 
     //Reload Grid

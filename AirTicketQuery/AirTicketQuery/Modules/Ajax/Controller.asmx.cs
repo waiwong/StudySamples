@@ -23,9 +23,10 @@ namespace WebProj.Modules.Ajax
     [WebServiceBinding(ConformsTo = WsiProfiles.BasicProfile1_1)]
     [System.ComponentModel.ToolboxItem(false)]
     // To allow this Web Service to be called from script, using ASP.NET AJAX, uncomment the following line. 
-    // [System.Web.Script.Services.ScriptService]
+    [System.Web.Script.Services.ScriptService]
     public class Controller : System.Web.Services.WebService
-    {    
+    {
+        [WebMethod(EnableSession = true)]
         public void City_Get()
         {
             List<SqlParameter> listParam = new List<SqlParameter>();
@@ -51,79 +52,58 @@ namespace WebProj.Modules.Ajax
 
             jsonStr = JsonConvert.SerializeObject(ht);
             ResponseWrite(jsonStr);
-        }       
-        
-        public void Flight_Get()
-        {
-            //http://b2c.csair.com/B2C40/detail-SHACAN-20151211-1-0-0-0-1-0-0-0-1-0.g2c
-
-            //List<SqlParameter> listParam = new List<SqlParameter>();
-            //string jsonStr = string.Empty;
-            //HttpRequest req = Context.Request;
-            //string strC_ID = req.Form["C_ID"];
-            //string searchName = req.Form["searchName"];
-            //string searchVal = req.Form["searchVal"];
-            //string category = req.Form["category"];
-            //string sort = req.Form["sort"];
-            //string page = req.Form["page"] ?? "1";
-            //string rowsCnt = req.Form["rows"] ?? "100";
-            //string order = req.Form["order"];
-            //string sqlWhere = string.Empty;
-            //if (!string.IsNullOrEmpty(searchVal))
-            //{
-            //    sqlWhere += string.Format(" AND {0} LIKE '%' + @{0} + '%'", searchName);
-            //    listParam.Add(new SqlParameter("@" + searchName, searchVal));
-            //}
-
-            //if (!string.IsNullOrEmpty(category))
-            //{
-            //    sqlWhere += " AND C_CATEGORY = @C_CATEGORY";
-            //    listParam.Add(new SqlParameter("@C_CATEGORY", category));
-            //}
-
-            //if (!string.IsNullOrEmpty(strC_ID))
-            //{
-            //    sqlWhere += " AND C_ID = @C_ID";
-            //    listParam.Add(new SqlParameter("@C_ID", strC_ID));
-            //}
-
-            //Hashtable ht = new Hashtable();
-            //DB dbi = new DB(SystemConst.DBConnString);
-            //string sqlBase = @"SELECT * FROM dbo.V_RECORD_MAIN WHERE C_DEL=0";
-            //string sqlCnt = @"SELECT COUNT(1) FROM dbo.V_RECORD_MAIN WHERE C_DEL=0";
-            //try
-            //{
-            //    string sql = sqlBase + sqlWhere;
-            //    sqlCnt += sqlWhere;
-
-            //    if (!string.IsNullOrEmpty(sort))
-            //        sql += string.Format(" ORDER BY {0} {1}", sort, order);
-
-            //    int total = Convert.ToInt16(dbi.ExecScalar(sqlCnt, listParam.ToArray(), "0"));
-            //    DataTable dt = dbi.GetPageData(sql, int.Parse(page), int.Parse(rowsCnt), listParam.ToArray());
-            //    ht.Add("rows", dt);
-            //    ht.Add("total", total);
-            //}
-            //catch (Exception ex)
-            //{
-            //    ht.Add("err", ex.Message);
-            //    if (!ht.ContainsKey("rows"))
-            //    {
-            //        ht.Add("rows", dbi.GetDataTable(sqlBase + " AND 1=2"));
-            //    }
-
-            //    ht.Add("total", 0);
-            //}
-
-            //jsonStr = JsonConvert.SerializeObject(ht);
-            //ResponseWrite(jsonStr);
         }
 
-        private List<Flight> CSAIR_Get(string fromCity,string toCity,string departDate)
+        [WebMethod(EnableSession = true)]
+        public void Flight_Get()
+        {
+            string jsonStr = string.Empty;
+            HttpRequest req = Context.Request;
+            string strFromCity = req.Form["FromCity"];
+            string strToCity = req.Form["ToCity"];
+            string strDeparture = req.Form["Departure"];
+            string sort = req.Form["sort"];
+            int page = Convert.ToInt16(req.Form["page"] ?? "1");
+            int rowsCnt = Convert.ToInt16(req.Form["rows"] ?? "100");
+            string order = req.Form["order"];
+            Hashtable ht = new Hashtable();
+            List<Flight> lstFlight = new List<Flight>();
+            try
+            {
+                List<Flight> rsltLstFlight = new List<Flight>();
+                if (!string.IsNullOrEmpty(strFromCity) && !string.IsNullOrEmpty(strToCity) && !string.IsNullOrEmpty(strDeparture))
+                {
+                    lstFlight.AddRange(this.CSAIR_Get(strFromCity, strToCity, strDeparture));
+                    lstFlight = EntityUtil.SortList(lstFlight, sort, order.ToEnum<EntityUtil.SortOrder>());
+
+                    Flight[] tmpFlights = new Flight[rowsCnt];
+                    lstFlight.CopyTo(page * rowsCnt, tmpFlights, 0, rowsCnt);
+                    rsltLstFlight.AddRange(tmpFlights);
+                }
+
+                int total = lstFlight.Count;
+                ht.Add("rows", EntityUtil.Create(rsltLstFlight));
+                ht.Add("total", total);
+            }
+            catch (Exception ex)
+            {
+                ht.Add("err", ex.Message);
+                if (!ht.ContainsKey("rows"))
+                {
+                    ht.Add("rows", EntityUtil.Create(lstFlight));
+                }
+
+                ht.Add("total", 0);
+            }
+
+            jsonStr = JsonConvert.SerializeObject(ht);
+            ResponseWrite(jsonStr);
+        }
+
+        private List<Flight> CSAIR_Get(string fromCity, string toCity, string departDate)
         {
             List<Flight> lstFlight = new List<Flight>();
             // http://b2c.csair.com/B2C40/detail-SHACAN-20151211-1-0-0-0-1-0-0-0-1-0.g2c
-            // http://b2c.csair.com/B2C40/detail-PEKCAN-20151024-1-0-0-0-1-0-0-0-1-0.g2c
             DateTime dtDepart = DateTime.Parse(departDate);
             string strUrl = string.Format("http://b2c.csair.com/B2C40/detail-{0}{1}-{2}-1-0-0-0-1-0-0-0-1-0.g2c", fromCity, toCity, dtDepart.ToString("yyyyMMdd"));
             XmlDocument doc = new XmlDocument();
@@ -132,45 +112,41 @@ namespace WebProj.Modules.Ajax
             XmlNodeList nodelist = xmlHelper.GetXmlNodeListByXpath("/page/FLIGHTS/SEGMENT/DATEFLIGHT/DIRECTFLIGHT");
             foreach (XmlNode node in nodelist)
             {
-                DateTime takeoff, landing;
                 Flight f = new Flight();
                 f.C_From = fromCity;
                 f.C_To = toCity;
                 f.C_Departure = departDate;
-                f.C_FlightNo =  XmlNodeHelper.ParseByNode(node,"FLIGHTNO");
+                f.C_FlightNo = XmlNodeHelper.ParseByNode(node, "FLIGHTNO");
                 f.C_Airline = XmlNodeHelper.ParseByNode(node, "AIRLINE");
                 f.C_DEPTIME = XmlNodeHelper.ParseByNode(node, "DEPTIME");
                 f.C_ARRTIME = XmlNodeHelper.ParseByNode(node, "ARRTIME");
                 f.C_TotalTime = XmlNodeHelper.ParseByNode(node, "TIMEDURINGFLIGHT_en");
-                              
-                XmlNodeList price = xmlHelper.GetXmlNodeListByXpath("");
-                float max = 10f, min = 10000f;
-                foreach (XmlNode m in price)
+                StringBuilder sbPriceInfo = new StringBuilder();
+                XmlNodeList xnlPrice = node.SelectNodes("CABINS/CABIN");
+                foreach (XmlNode childNodePrice in xnlPrice)
                 {
-                    if (float.Parse(m.Value) > max)
-                    {
-                        max = float.Parse(m.Value);
-                    }
-                    if (float.Parse(m.Value) < min)
-                    {
-                        min = float.Parse(m.Value);
-                    }
+                    string nodeName = XmlNodeHelper.ParseByNode(childNodePrice, "NAME");
+                    //if (nodeName.Equals("J"))
+                    //    f.C_FirstClass = Convert.ToDecimal(XmlNodeHelper.ParseByNode(childNodePrice, "ADULTPRICE"));
+                    //else if (nodeName.Equals("C"))
+                    //    f.C_Economy = Convert.ToDecimal(XmlNodeHelper.ParseByNode(childNodePrice, "ADULTPRICE"));
+                    //else if (nodeName.Equals("D"))
+                    //    f.C_Business = Convert.ToDecimal(XmlNodeHelper.ParseByNode(childNodePrice, "ADULTPRICE"));
+                    sbPriceInfo.AppendFormat("nodeName:{0}->ADULTPRICE:{1}->DISCOUNT:{2}->ADULTFAREBASIS:{3}->GBADULTPRICE:{4}"
+                        + "->BRANDTYPE:{5}->MILEAGESTANDARD:{6}",
+                        nodeName, XmlNodeHelper.ParseByNode(childNodePrice, "ADULTPRICE") ?? string.Empty
+                        , XmlNodeHelper.ParseByNode(childNodePrice, "DISCOUNT") ?? string.Empty
+                        , XmlNodeHelper.ParseByNode(childNodePrice, "ADULTFAREBASIS") ?? string.Empty
+                        , XmlNodeHelper.ParseByNode(childNodePrice, "GBADULTPRICE") ?? string.Empty
+                        , XmlNodeHelper.ParseByNode(childNodePrice, "BRANDTYPE") ?? string.Empty
+                        , XmlNodeHelper.ParseByNode(childNodePrice, "MILEAGESTANDARD") ?? string.Empty);
                 }
-                if (max == 10f)
-                {
-                    max = 0f;
-                }
-                if (min == 10000f)
-                {
-                    min = 0f;
-                }
-                f.firstclass = max;
-                f.economy = min;
+
+                f.C_Remark = sbPriceInfo.ToString();
                 lstFlight.Add(f);
-               
             }
 
-            return lstFlight;       
+            return lstFlight;
         }
 
         #region Private Methods

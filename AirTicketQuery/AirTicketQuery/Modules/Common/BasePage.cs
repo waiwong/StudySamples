@@ -1,4 +1,5 @@
-﻿using System;
+﻿using AirTicketQuery.Modules.Code;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
@@ -8,7 +9,6 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Web;
 using System.Web.UI;
-using AirTicketQuery.Modules.Code;
 
 namespace AirTicketQuery.Modules.Common
 {
@@ -20,11 +20,11 @@ namespace AirTicketQuery.Modules.Common
         {
             string result = this.Request.QueryString[strParam];
             if (string.IsNullOrEmpty(result))
-                result =  this.Request.Form[strParam];
+                result = this.Request.Form[strParam];
             return result;
         }
         #endregion
-              
+
         #region Session Handle
 
         protected override void OnPreInit(EventArgs e)
@@ -84,30 +84,8 @@ namespace AirTicketQuery.Modules.Common
         {
             return SessionHelper.CheckValueOfSession(this.TmpSessionPrefix + key);
         }
-        
+
         #endregion
-
-        protected enum SortOrder
-        {
-            ASC,
-            DESC
-        }
-
-        protected List<T> SortList<T>(List<T> list, string sortBy, SortOrder direction)
-        {
-            if (string.IsNullOrEmpty(sortBy))
-                return list;
-
-            PropertyInfo property = list.GetType().GetGenericArguments()[0].GetProperty(sortBy);
-            if (direction == SortOrder.ASC)
-            {
-                return list.OrderBy(e => property.GetValue(e, null)).ToList<T>();
-            }
-            else
-            {
-                return list.OrderByDescending(e => property.GetValue(e, null)).ToList<T>();
-            }
-        }
 
         protected System.Web.UI.WebControls.HiddenField FindHiddenControl(string strControlID)
         {

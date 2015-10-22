@@ -299,6 +299,28 @@ namespace AirTicketQuery.Modules.Code
 
             return result;
         }
+
+        public enum SortOrder
+        {
+            ASC,
+            DESC
+        }
+
+        public static List<T> SortList<T>(List<T> list, string sortBy, SortOrder direction)
+        {
+            if (string.IsNullOrEmpty(sortBy))
+                return list;
+
+            PropertyInfo property = list.GetType().GetGenericArguments()[0].GetProperty(sortBy);
+            if (direction == SortOrder.ASC)
+            {
+                return list.OrderBy(e => property.GetValue(e, null)).ToList<T>();
+            }
+            else
+            {
+                return list.OrderByDescending(e => property.GetValue(e, null)).ToList<T>();
+            }
+        }
     }
 
     internal class DisplayAttr : Attribute
