@@ -1,1 +1,1 @@
-﻿<%@ WebService Language="C#" CodeBehind="Controller.asmx.cs" Class="WebProj.Modules.Ajax.Controller" %>
+﻿<%@ WebService Language="C#" CodeBehind="Controller.asmx.cs" Class="AirTicketQuery.Modules.Ajax.Controller" %>

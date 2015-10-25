@@ -15,6 +15,8 @@ namespace AirTicketQuery.Modules.Code
         public int C_ID { get; set; }
         public string C_NAME { get; set; }
         public string C_CODE { get; set; }
+        public string C_CE_CODE { get; set; }
+        public string C_WS_CODE { get; set; }
     }
 
     public partial class Flight
