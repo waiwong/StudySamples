@@ -1,6 +1,4 @@
-﻿using AirTicketQuery.Modules.Code;
-using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Data;
@@ -15,6 +13,9 @@ using System.Text;
 using System.Web;
 using System.Web.Services;
 using System.Xml;
+using AirTicketQuery.Modules.Code;
+using Newtonsoft.Json;
+using System.Threading;
 
 namespace AirTicketQuery.Modules.Ajax
 {
@@ -80,9 +81,12 @@ namespace AirTicketQuery.Modules.Ajax
                     City toCity = EntityUtil.Create<City>(dbi.GetDataTable(sqlCity, this.InitSqlParams("C_CODE", strToCity)).Rows[0]);
 
                     //lstFlight.AddRange(this.CSAIR_Get(strFromCity, strToCity, strDeparture));
-                    lstFlight.AddRange(this.WS_Get(fromCity.C_NAME, toCity.C_NAME, strDeparture));
+                    //lstFlight.AddRange(this.WS_Get(fromCity.C_NAME, toCity.C_NAME, strDeparture));
+                    //lstFlight.AddRange(this.CTRIP_Get(fromCity.C_CODE, toCity.C_CODE, strDeparture));
+
                     //todo: This function not stable, I still work on it. 
-                    //lstFlight.AddRange(this.CEAIR_Get(strFromCity, strToCity, strDeparture));
+                    //lstFlight.AddRange(this.QUNAR_Get(fromCity.C_CE_CODE, toCity.C_CE_CODE, strDeparture));
+                    lstFlight.AddRange(this.CEAIR_Get(strFromCity, strToCity, strDeparture));
                     if (!string.IsNullOrEmpty(sort) && !string.IsNullOrEmpty(order))
                         lstFlight = EntityUtil.SortList(lstFlight, sort, order.ToEnum<EntityUtil.SortOrder>());
 
@@ -207,63 +211,140 @@ namespace AirTicketQuery.Modules.Ajax
             return lstFlight;
         }
 
+        private List<Flight> CTRIP_Get(string fromCity, string toCity, string departDate)
+        {
+            List<Flight> lstFlight = new List<Flight>();
+            //http://openapi.ctrip.com/logicsvr/AjaxServerNew.ashx?datatype=jsonp&callProxyKey=flightsearch&requestJson={%22AllianceID%22:%20%227480%22,%22SID%22:%20%22172916%22,%22SecretKey%22:%20%220FEFFC1F-D220-4AAD-8F24-642C962092B7%22,%22Routes%22:%20[{%22DepartCity%22:%20%22BJS%22,%22ArriveCity%22:%20%22CAN%22,%22DepartDate%22:%20%222015-11-05%22}]}
+            DateTime dtDepart = DateTime.Parse(departDate);
+            string strDepatTime = dtDepart.ToString("yyyy-MM-dd");
+            string strParams = string.Format("\"DepartCity\": \"{0}\",\"ArriveCity\": \"{1}\",\"DepartDate\": \"{2}\"", fromCity, toCity, dtDepart.ToString("yyyy-MM-dd"));
+            string strUrl = "http://openapi.ctrip.com/logicsvr/AjaxServerNew.ashx?datatype=jsonp&callProxyKey=flightsearch&requestJson={\"AllianceID\": \"7480\",\"SID\": \"172916\",\"SecretKey\": \"0FEFFC1F-D220-4AAD-8F24-642C962092B7\",\"Routes\": [{" + strParams + "}]}";
+
+            WebClient client = new WebClient();
+            string downloadStr = client.DownloadString(new Uri(strUrl));
+            System.Diagnostics.Debug.Write(downloadStr);
+            //string path1 = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "11.txt");
+            //string downloadStr = File.ReadAllText(path1, System.Text.Encoding.GetEncoding("GB2312"));
+            System.Diagnostics.Debug.Write(downloadStr);
+            lstFlight = clsParseCTRIP.ParseJson(downloadStr);
+            return lstFlight;
+        }
+
+        private List<Flight> QUNAR_Get(string fromCity, string toCity, string departDate)
+        {
+            List<Flight> lstFlight = new List<Flight>();
+            DateTime dtDepart = DateTime.Parse(departDate);
+            //http://flight.qunar.com/site/oneway_list.htm?searchDepartureAirport=%E5%B9%BF%E5%B7%9E&searchArrivalAirport=%E5%8C%97%E4%BA%AC&searchDepartureTime=2015-11-03&searchArrivalTime=2015-11-03&nextNDays=0&startSearch=true&fromCode=CAN&toCode=BJS&from=qunarindex&lowestPrice=null
+
+            string strUrl = string.Format("http://www.ceair.com/flight2014/{0}-{1}-{2}_CNY.html", fromCity, toCity, dtDepart.ToString("yyMMdd"));
+            try
+            {
+                Thread thread = new Thread(delegate()
+                {
+                    var p = new PageSnatchV3();
+                    //p.Timeout = 20000;
+                    //p.Url = strUrl;
+                    ////p.SnatchCompleted += new SnatchCompletedEventHandler(p_SnatchCompleted);
+                    //p.SnatchCompleted += delegate(object sender, SnatchCompletedEventArgs e)
+                    //        {
+                    //            if (e.Error != null)
+                    //                System.Diagnostics.Debug.Write(e.Error);
+                    //            else
+                    //            {
+                    //                System.Diagnostics.Debug.Write(e.Text);
+                    //                System.Diagnostics.Debug.Write("=".PadLeft(50, '='));
+                    //                System.Diagnostics.Debug.Write(e.TextAsync);
+                    //            }
+                    //        };
+                    System.Diagnostics.Debug.Write(p.Navigate(strUrl, 200));
+                });
+
+                thread.SetApartmentState(ApartmentState.STA);
+                thread.Start();
+                thread.Join();
+            }
+            catch (Exception ex) { throw ex; }
+
+            //var p = new PageSnatch(strUrl, 200);
+            //p.Navigate();
+            //if (p.Error != null)
+            //    System.Diagnostics.Debug.Write(p.Error);
+            //else
+            //{
+            //    System.Diagnostics.Debug.Write(p.HTMLSourceCode);
+            //    System.Diagnostics.Debug.Write("=".PadLeft(50, '='));
+            //    System.Diagnostics.Debug.Write(p.TextAsync);
+            //    //string pagePart = Regex.Match(pageHtml, "<table\\swidth=\"100%\"\\sborder=\"0\"\\scellspacing=\"1\"\\scellpadding=\"0\"\\sclass=\"flight_info\"\\sid=\"go_table\">\\s[\\s\\S]*</table>").Value;
+
+            //    //XmlDocument doc = new XmlDocument();
+            //    //doc.Load(strUrl);
+            //    //XmlHelper xmlHelper = new XmlHelper(doc);
+            //    //XmlNodeList nodelist = xmlHelper.GetXmlNodeListByXpath("FLIGHTS/SEGMENT/DATEFLIGHT/DIRECTFLIGHT/FLIGHT");
+            //    //foreach (XmlNode node in nodelist)
+            //    //{
+            //    //    Flight f = new Flight();
+            //    //    f.C_DateSource = "CS AIR";
+            //    //    f.C_From = fromCity;
+            //    //    f.C_To = toCity;
+            //    //    f.C_Departure = departDate;
+            //    //    f.C_FlightNo = XmlNodeHelper.ParseByNode(node, "FLIGHTNO");
+            //    //    f.C_Airline = XmlNodeHelper.ParseByNode(node, "AIRLINE");
+            //    //    f.C_DEPTIME = XmlNodeHelper.ParseByNode(node, "DEPTIME");
+            //    //    f.C_ARRTIME = XmlNodeHelper.ParseByNode(node, "ARRTIME");
+            //    //    f.C_TotalTime = XmlNodeHelper.ParseByNode(node, "TIMEDURINGFLIGHT_en");
+            //    //    StringBuilder sbPriceInfo = new StringBuilder();
+            //    //    XmlNodeList xnlPrice = node.SelectNodes("CABINS/CABIN");
+            //    //    foreach (XmlNode childNodePrice in xnlPrice)
+            //    //    {
+            //    //        string nodeName = XmlNodeHelper.ParseByNode(childNodePrice, "NAME");
+            //    //        //if (nodeName.Equals("J"))
+            //    //        //    f.C_FirstClass = Convert.ToDecimal(XmlNodeHelper.ParseByNode(childNodePrice, "ADULTPRICE"));
+            //    //        //else if (nodeName.Equals("C"))
+            //    //        //    f.C_Economy = Convert.ToDecimal(XmlNodeHelper.ParseByNode(childNodePrice, "ADULTPRICE"));
+            //    //        //else if (nodeName.Equals("D"))
+            //    //        //    f.C_Business = Convert.ToDecimal(XmlNodeHelper.ParseByNode(childNodePrice, "ADULTPRICE"));
+            //    //        sbPriceInfo.AppendFormat("nodeName:{0}->ADULTPRICE:{1}->DISCOUNT:{2}->ADULTFAREBASIS:{3}->GBADULTPRICE:{4}"
+            //    //            + "->BRANDTYPE:{5}->MILEAGESTANDARD:{6}",
+            //    //            nodeName, XmlNodeHelper.ParseByNode(childNodePrice, "ADULTPRICE") ?? string.Empty
+            //    //            , XmlNodeHelper.ParseByNode(childNodePrice, "DISCOUNT") ?? string.Empty
+            //    //            , XmlNodeHelper.ParseByNode(childNodePrice, "ADULTFAREBASIS") ?? string.Empty
+            //    //            , XmlNodeHelper.ParseByNode(childNodePrice, "GBADULTPRICE") ?? string.Empty
+            //    //            , XmlNodeHelper.ParseByNode(childNodePrice, "BRANDTYPE") ?? string.Empty
+            //    //            , XmlNodeHelper.ParseByNode(childNodePrice, "MILEAGESTANDARD") ?? string.Empty);
+            //    //    }
+
+            //    //    f.C_Remark = sbPriceInfo.ToString();
+            //    //    lstFlight.Add(f);
+            //    //}
+            //}
+
+            return lstFlight;
+        }
+
+        void p_SnatchCompleted()
+        {
+            throw new NotImplementedException();
+        }
+
         private List<Flight> CEAIR_Get(string fromCity, string toCity, string departDate)
         {
             List<Flight> lstFlight = new List<Flight>();
             DateTime dtDepart = DateTime.Parse(departDate);
             string strUrl = string.Format("http://www.ceair.com/flight2014/{0}-{1}-{2}_CNY.html", fromCity, toCity, dtDepart.ToString("yyMMdd"));
-            var p = new PageSnatch(strUrl, 20000);
-            p.Navigate();
-            if (p.Error != null)
-                System.Diagnostics.Debug.Write(p.Error);
-            else
+            string strHTML = string.Empty;
+            try
             {
-                System.Diagnostics.Debug.Write(p.Text);
-                System.Diagnostics.Debug.Write("=".PadLeft(50, '='));
-                System.Diagnostics.Debug.Write(p.TextAsync);
-                //string pagePart = Regex.Match(pageHtml, "<table\\swidth=\"100%\"\\sborder=\"0\"\\scellspacing=\"1\"\\scellpadding=\"0\"\\sclass=\"flight_info\"\\sid=\"go_table\">\\s[\\s\\S]*</table>").Value;
-
-                //XmlDocument doc = new XmlDocument();
-                //doc.Load(strUrl);
-                //XmlHelper xmlHelper = new XmlHelper(doc);
-                //XmlNodeList nodelist = xmlHelper.GetXmlNodeListByXpath("FLIGHTS/SEGMENT/DATEFLIGHT/DIRECTFLIGHT/FLIGHT");
-                //foreach (XmlNode node in nodelist)
-                //{
-                //    Flight f = new Flight();
-                //    f.C_DateSource = "CS AIR";
-                //    f.C_From = fromCity;
-                //    f.C_To = toCity;
-                //    f.C_Departure = departDate;
-                //    f.C_FlightNo = XmlNodeHelper.ParseByNode(node, "FLIGHTNO");
-                //    f.C_Airline = XmlNodeHelper.ParseByNode(node, "AIRLINE");
-                //    f.C_DEPTIME = XmlNodeHelper.ParseByNode(node, "DEPTIME");
-                //    f.C_ARRTIME = XmlNodeHelper.ParseByNode(node, "ARRTIME");
-                //    f.C_TotalTime = XmlNodeHelper.ParseByNode(node, "TIMEDURINGFLIGHT_en");
-                //    StringBuilder sbPriceInfo = new StringBuilder();
-                //    XmlNodeList xnlPrice = node.SelectNodes("CABINS/CABIN");
-                //    foreach (XmlNode childNodePrice in xnlPrice)
-                //    {
-                //        string nodeName = XmlNodeHelper.ParseByNode(childNodePrice, "NAME");
-                //        //if (nodeName.Equals("J"))
-                //        //    f.C_FirstClass = Convert.ToDecimal(XmlNodeHelper.ParseByNode(childNodePrice, "ADULTPRICE"));
-                //        //else if (nodeName.Equals("C"))
-                //        //    f.C_Economy = Convert.ToDecimal(XmlNodeHelper.ParseByNode(childNodePrice, "ADULTPRICE"));
-                //        //else if (nodeName.Equals("D"))
-                //        //    f.C_Business = Convert.ToDecimal(XmlNodeHelper.ParseByNode(childNodePrice, "ADULTPRICE"));
-                //        sbPriceInfo.AppendFormat("nodeName:{0}->ADULTPRICE:{1}->DISCOUNT:{2}->ADULTFAREBASIS:{3}->GBADULTPRICE:{4}"
-                //            + "->BRANDTYPE:{5}->MILEAGESTANDARD:{6}",
-                //            nodeName, XmlNodeHelper.ParseByNode(childNodePrice, "ADULTPRICE") ?? string.Empty
-                //            , XmlNodeHelper.ParseByNode(childNodePrice, "DISCOUNT") ?? string.Empty
-                //            , XmlNodeHelper.ParseByNode(childNodePrice, "ADULTFAREBASIS") ?? string.Empty
-                //            , XmlNodeHelper.ParseByNode(childNodePrice, "GBADULTPRICE") ?? string.Empty
-                //            , XmlNodeHelper.ParseByNode(childNodePrice, "BRANDTYPE") ?? string.Empty
-                //            , XmlNodeHelper.ParseByNode(childNodePrice, "MILEAGESTANDARD") ?? string.Empty);
-                //    }
-
-                //    f.C_Remark = sbPriceInfo.ToString();
-                //    lstFlight.Add(f);
-                //}
+                Thread thread = new Thread(delegate()
+                {
+                    var p = new PageSnatchV3();
+                    strHTML = p.Navigate(strUrl, 200);
+                });
+                thread.SetApartmentState(ApartmentState.STA);
+                thread.Start();
+                thread.Join();
             }
+            catch (Exception ex) { throw ex; }
+            
 
             return lstFlight;
         }
@@ -279,7 +360,7 @@ namespace AirTicketQuery.Modules.Ajax
                 System.Diagnostics.Debug.Write(p.Error);
             else
             {
-                System.Diagnostics.Debug.Write(p.Text);
+                System.Diagnostics.Debug.Write(p.HTMLSourceCode);
                 System.Diagnostics.Debug.Write("=".PadLeft(50, '='));
                 System.Diagnostics.Debug.Write(p.TextAsync);
             }

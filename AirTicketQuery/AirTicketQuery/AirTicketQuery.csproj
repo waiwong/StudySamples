@@ -53,6 +53,9 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Microsoft.mshtml, Version=7.0.3300.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <EmbedInteropTypes>True</EmbedInteropTypes>
+    </Reference>
     <Reference Include="Newtonsoft.Json, Version=4.5.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\DllReferences\Newtonsoft.Json.dll</HintPath>
@@ -155,11 +158,14 @@
     <Compile Include="Default.aspx.designer.cs">
       <DependentUpon>Default.aspx</DependentUpon>
     </Compile>
+    <Compile Include="Modules\Ajax\clsParseCTRIP.cs" />
     <Compile Include="Modules\Ajax\Controller.asmx.cs">
       <DependentUpon>Controller.asmx</DependentUpon>
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="Modules\Ajax\PageSnatch.cs" />
+    <Compile Include="Modules\Ajax\PageSnatchV2.cs" />
+    <Compile Include="Modules\Ajax\PageSnatchV3.cs" />
     <Compile Include="Modules\Code\DataSetHelper.cs" />
     <Compile Include="Modules\Code\DB.cs" />
     <Compile Include="Modules\Code\EntityUtil.cs" />
