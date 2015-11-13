@@ -1,0 +1,32 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DemoForAIA", "DemoForAIA\DemoForAIA.csproj", "{F9C3BA51-03BA-4F2B-BF5F-04A9A65A909C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BWHITD.Sys.Common", "BWHITD.Sys.Common\BWHITD.Sys.Common.csproj", "{6E700746-D350-4BAE-A296-47FE5FE0E118}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BWHITD.Win.Lib", "BWHITD.Win.Lib\BWHITD.Win.Lib.csproj", "{E0FE66FE-392E-4FD8-9A8E-7270C42DD151}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F9C3BA51-03BA-4F2B-BF5F-04A9A65A909C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F9C3BA51-03BA-4F2B-BF5F-04A9A65A909C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F9C3BA51-03BA-4F2B-BF5F-04A9A65A909C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F9C3BA51-03BA-4F2B-BF5F-04A9A65A909C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6E700746-D350-4BAE-A296-47FE5FE0E118}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6E700746-D350-4BAE-A296-47FE5FE0E118}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6E700746-D350-4BAE-A296-47FE5FE0E118}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6E700746-D350-4BAE-A296-47FE5FE0E118}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E0FE66FE-392E-4FD8-9A8E-7270C42DD151}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E0FE66FE-392E-4FD8-9A8E-7270C42DD151}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E0FE66FE-392E-4FD8-9A8E-7270C42DD151}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E0FE66FE-392E-4FD8-9A8E-7270C42DD151}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
